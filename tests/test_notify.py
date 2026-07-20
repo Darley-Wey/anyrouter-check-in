@@ -24,6 +24,10 @@ def notification_kit(monkeypatch):
 	monkeypatch.setenv('DINGDING_WEBHOOK', 'https://oapi.dingtalk.com/robot/send?access_token=test_token')
 	monkeypatch.setenv('FEISHU_WEBHOOK', 'https://open.feishu.cn/open-apis/bot/v2/hook/test_token')
 	monkeypatch.setenv('WEIXIN_WEBHOOK', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test_token')
+	monkeypatch.setenv(
+		'WEIXIN_PUSH_CONFIG',
+		'{"bot_token":"token","to_user_id":"user@im.wechat","context_token":"context"}',
+	)
 	monkeypatch.setenv('GOTIFY_URL', 'https://gotify.example.com/message')
 	monkeypatch.setenv('GOTIFY_TOKEN', 'gotify_token')
 	monkeypatch.setenv('TELEGRAM_BOT_TOKEN', 'telegram_token')
@@ -108,6 +112,16 @@ def test_send_wecom(mock_httpx_client, notification_kit):
 	)
 
 
+@patch('utils.notify.WeixinPushClient')
+def test_send_personal_weixin(mock_weixin_client, notification_kit):
+	mock_client = MagicMock()
+	mock_weixin_client.from_env.return_value.__enter__.return_value = mock_client
+
+	notification_kit.send_personal_weixin('测试标题', '测试内容')
+
+	mock_client.send_text.assert_called_once_with('测试标题\n测试内容')
+
+
 def test_send_gotify(mock_httpx_client, notification_kit):
 	mock_client, _ = mock_httpx_client
 
@@ -165,6 +179,7 @@ def test_push_message(notification_kit, monkeypatch):
 		'send_dingtalk',
 		'send_feishu',
 		'send_wecom',
+		'send_personal_weixin',
 		'send_gotify',
 		'send_telegram',
 		'send_bark',

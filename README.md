@@ -311,6 +311,41 @@ PROVIDERS={"agentrouter":{"use_proxy":true}}
 
 - `WEIXIN_WEBHOOK`: 企业微信机器人的 Webhook 地址
 
+### 个人微信推送（腾讯 iLink 协议）
+
+项目提供了一个独立的个人微信推送工具，协议兼容
+[`Tencent/openclaw-weixin`](https://github.com/Tencent/openclaw-weixin) 公布的 HTTP API，
+但不需要安装或运行 OpenClaw。
+
+首次使用需要在本地完成一次扫码登录和接收人绑定：
+
+```bash
+# 1. 获取二维码，使用微信扫码确认
+uv run python -m utils.weixin_push login
+
+# 2. 运行后，在微信中向刚连接的机器人发送任意一条消息
+uv run python -m utils.weixin_push bind
+
+# 3. 本地测试推送
+uv run python -m utils.weixin_push send --title "AnyRouter" "测试消息"
+```
+
+凭证默认保存在 `~/.anyrouter-check-in/weixin-push.json`，文件包含敏感的 bot token 和
+会话 context token，不要提交到 Git。配置 GitHub Actions 时，将其转换成单行 JSON 并写入
+`production` Environment Secret：
+
+```powershell
+uv run python -m utils.weixin_push secret | gh secret set WEIXIN_PUSH_CONFIG --env production
+```
+
+Secret 名称：
+
+- `WEIXIN_PUSH_CONFIG`: 包含 `bot_token`、`base_url`、`to_user_id`、`context_token` 等字段的 JSON
+
+注意：这不是企业微信 Webhook。接收人需要先主动向机器人发送过消息，以获取 API 要求的
+`to_user_id` 和 `context_token`。微信可能使登录 token 失效，出现 `-14` 或 session timeout 时
+需要重新执行 `login` 和 `bind`。
+
 ### PushPlus 推送
 
 - `PUSHPLUS_TOKEN`: PushPlus 的 Token

@@ -1,5 +1,7 @@
 .claude
 .env
+.weixin-push*.json
+weixin-push*.json
 .venv
 __pycache__
 .pytest_cache
