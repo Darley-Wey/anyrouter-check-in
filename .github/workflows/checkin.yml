@@ -106,6 +106,7 @@ jobs:
         SERVERPUSHKEY: ${{ secrets.SERVERPUSHKEY }}
         FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
         WEIXIN_WEBHOOK: ${{ secrets.WEIXIN_WEBHOOK }}
+        WEIXIN_PUSH_CONFIG: ${{ secrets.WEIXIN_PUSH_CONFIG }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         GOTIFY_URL: ${{ secrets.GOTIFY_URL }}

@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 import httpx
 
+from utils.weixin_push import WeixinPushClient
+
 
 class NotificationKit:
 	def __init__(self):
@@ -18,6 +20,7 @@ class NotificationKit:
 		self.dingding_webhook = os.getenv('DINGDING_WEBHOOK')
 		self.feishu_webhook = os.getenv('FEISHU_WEBHOOK')
 		self.weixin_webhook = os.getenv('WEIXIN_WEBHOOK')
+		self.weixin_push_config = os.getenv('WEIXIN_PUSH_CONFIG')
 		self.gotify_url = os.getenv('GOTIFY_URL')
 		self.gotify_token = os.getenv('GOTIFY_TOKEN')
 		gotify_priority_env = os.getenv('GOTIFY_PRIORITY', '9')
@@ -116,6 +119,13 @@ class NotificationKit:
 		data = {'msgtype': 'text', 'text': {'content': f'{title}\n{content}'}}
 		self._post_json('WeChat Work', self.weixin_webhook, data)
 
+	def send_personal_weixin(self, title: str, content: str):
+		if not self.weixin_push_config:
+			raise ValueError('Personal WeChat push configuration not set')
+
+		with WeixinPushClient.from_env() as client:
+			client.send_text(f'{title}\n{content}')
+
 	def send_gotify(self, title: str, content: str):
 		if not self.gotify_url or not self.gotify_token:
 			raise ValueError('Gotify URL or Token not configured')
@@ -165,6 +175,7 @@ class NotificationKit:
 			('DingTalk', lambda: self.send_dingtalk(title, content)),
 			('Feishu', lambda: self.send_feishu(title, content)),
 			('WeChat Work', lambda: self.send_wecom(title, content)),
+			('Personal WeChat', lambda: self.send_personal_weixin(title, content)),
 			('Gotify', lambda: self.send_gotify(title, content)),
 			('Telegram', lambda: self.send_telegram(title, content)),
 			('Bark', lambda: self.send_bark(title, content)),
