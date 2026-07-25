@@ -510,7 +510,7 @@ async def main():
 	notification_content = []
 	current_balances = {}
 	account_check_in_details = {}
-	need_notify = False
+	need_notify = True
 	balance_changed = False
 
 	for i, account in enumerate(accounts):
@@ -520,11 +520,9 @@ async def main():
 			if success:
 				success_count += 1
 
-			should_notify_this_account = False
+			should_notify_this_account = True
 
 			if not success:
-				should_notify_this_account = True
-				need_notify = True
 				account_name = account.get_display_name(i)
 				print(f'[NOTIFY] {account_name} failed, will send notification')
 
@@ -631,9 +629,9 @@ async def main():
 
 		print(notify_content)
 		notify.push_message('AnyRouter Check-in Alert', notify_content, msg_type='text')
-		print('[NOTIFY] Notification sent due to failures or balance changes')
+		print('[NOTIFY] Notification sent for this check-in run')
 	else:
-		print('[INFO] All accounts successful and no balance changes detected, notification skipped')
+		print('[WARN] No notification content generated, notification skipped')
 
 	sys.exit(0 if success_count > 0 else 1)
 
