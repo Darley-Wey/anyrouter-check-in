@@ -82,11 +82,11 @@ jobs:
 
     - name: 配置代理
       env:
-        PROXY_SUBSCRIPTION_URL: ${{ secrets.PROXY_SUBSCRIPTION_URL }}
-        PROXY_TEST_URL: https://www.google.com/generate_204
-        MIHOMO_VERSION: v1.19.27
-        PROXY_REQUIRED: false
-      run: bash scripts/setup_mihomo_proxy.sh
+        PROXY_VLESS_URL: ${{ secrets.PROXY_VLESS_URL }}
+        PROXY_TEST_URL: https://agentrouter.org/login
+        XRAY_VERSION: v25.9.11
+        PROXY_REQUIRED: true
+      run: bash scripts/setup_xray_proxy.sh
 
     - name: 执行签到
       env:
@@ -132,7 +132,7 @@ jobs:
 
     - name: 停止代理
       if: always()
-      run: bash scripts/stop_mihomo_proxy.sh
+      run: bash scripts/stop_xray_proxy.sh
 
     - name: 执行结果
       if: always()
