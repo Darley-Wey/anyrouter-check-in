@@ -307,9 +307,35 @@ PROVIDERS={"agentrouter":{"use_proxy":true}}
 
 - `FEISHU_WEBHOOK`: 飞书机器人的 Webhook 地址
 
-### 企业微信机器人
+### 企业微信群机器人（Webhook）
 
-- `WEIXIN_WEBHOOK`: 企业微信机器人的 Webhook 地址
+- `WEIXIN_WEBHOOK`: 企业微信群机器人的 Webhook 地址；不能填智能机器人的 Bot ID 或 Secret。
+
+### 企业微信智能机器人（单聊主动通知）
+
+支持使用 Bot ID / Secret，通过企业微信官方 WebSocket 长连接向已绑定的单聊接收人主动发送签到通知。
+协议参考：[企业微信官方 Python SDK](https://github.com/wecomteam/wecom-aibot-python-sdk)。
+
+- `WECOM_AIBOT_CONFIG`: 包含 `bot_id`、`secret`、`to_user_id` 的单行 JSON，保存到 GitHub 的
+  `production` Environment Secret；不要将真实凭据提交到 Git。
+- 配置该变量后，智能机器人通知替代个人微信推送；旧的 `WEIXIN_PUSH_CONFIG` 可以保留用于回退。
+- 每次发送都等待企业微信成功回执；认证或发送失败会在通知日志中明确报错。
+
+首次绑定时，从标准输入传入只包含 `bot_id` 和 `secret` 的 JSON。下例从你自行准备的受保护文件读取
+（不要将文件加入仓库，用完删除）：
+
+```bash
+uv run python -m utils.wecom_aibot bind --repo YOUR_OWNER/YOUR_REPO --environment production < /path/to/credentials.json
+```
+
+程序认证后会打印一次性绑定口令。接收人需要在机器人**单聊**中发送该口令；群聊消息和其他文本不会被绑定。
+程序先向单聊发送测试通知，获成功回执后才将完整配置写入 `WECOM_AIBOT_CONFIG`，不会打印接收人标识或凭据。
+
+本地已有该环境变量时，可单独测试发送：
+
+```bash
+uv run python -m utils.wecom_aibot test
+```
 
 ### 个人微信推送（腾讯 iLink 协议）
 

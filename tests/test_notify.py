@@ -16,6 +16,7 @@ from utils.notify import NotificationKit
 
 @pytest.fixture
 def notification_kit(monkeypatch):
+	monkeypatch.delenv('WECOM_AIBOT_CONFIG', raising=False)
 	monkeypatch.setenv('EMAIL_USER', 'sender@example.com')
 	monkeypatch.setenv('EMAIL_PASS', 'email_password')
 	monkeypatch.setenv('EMAIL_TO', 'receiver@example.com')
@@ -110,6 +111,37 @@ def test_send_wecom(mock_httpx_client, notification_kit):
 		'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test_token',
 		json={'msgtype': 'text', 'text': {'content': '测试标题\n测试内容'}},
 	)
+
+
+@patch('utils.notify.WecomAiBotClient')
+def test_send_wecom_aibot(mock_client, notification_kit):
+	notification_kit.wecom_aibot_config = 'configured'
+	notification_kit.send_wecom_aibot('测试标题', '测试内容')
+	mock_client.from_env.return_value.__enter__.return_value.send_text.assert_called_once_with('测试标题\n\n测试内容')
+
+
+def test_aibot_replaces_personal_weixin(notification_kit, monkeypatch, capsys):
+	notification_kit.wecom_aibot_config = 'configured'
+	personal = MagicMock()
+	aibot = MagicMock()
+	monkeypatch.setattr(notification_kit, 'send_personal_weixin', personal)
+	monkeypatch.setattr(notification_kit, 'send_wecom_aibot', aibot)
+	for method in (
+		'send_email',
+		'send_pushplus',
+		'send_serverPush',
+		'send_dingtalk',
+		'send_feishu',
+		'send_wecom',
+		'send_gotify',
+		'send_telegram',
+		'send_bark',
+	):
+		monkeypatch.setattr(notification_kit, method, MagicMock())
+	notification_kit.push_message('标题', '内容')
+	aibot.assert_called_once_with('标题', '内容')
+	personal.assert_not_called()
+	assert '[WeCom AI Bot]: Message push successful!' in capsys.readouterr().out
 
 
 @patch('utils.notify.WeixinPushClient')
