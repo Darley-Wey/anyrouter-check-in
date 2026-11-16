@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 import httpx
 
+from utils.wecom_aibot import WecomAiBotClient
 from utils.weixin_push import WeixinPushClient
 
 
@@ -21,6 +22,7 @@ class NotificationKit:
 		self.feishu_webhook = os.getenv('FEISHU_WEBHOOK')
 		self.weixin_webhook = os.getenv('WEIXIN_WEBHOOK')
 		self.weixin_push_config = os.getenv('WEIXIN_PUSH_CONFIG')
+		self.wecom_aibot_config = os.getenv('WECOM_AIBOT_CONFIG', '').strip()
 		self.gotify_url = os.getenv('GOTIFY_URL')
 		self.gotify_token = os.getenv('GOTIFY_TOKEN')
 		gotify_priority_env = os.getenv('GOTIFY_PRIORITY', '9')
@@ -119,6 +121,13 @@ class NotificationKit:
 		data = {'msgtype': 'text', 'text': {'content': f'{title}\n{content}'}}
 		self._post_json('WeChat Work', self.weixin_webhook, data)
 
+	def send_wecom_aibot(self, title: str, content: str):
+		if not self.wecom_aibot_config:
+			raise ValueError('WeCom AI Bot configuration not set')
+
+		with WecomAiBotClient.from_env() as client:
+			client.send_text(f'{title}\n\n{content}')
+
 	def send_personal_weixin(self, title: str, content: str):
 		if not self.weixin_push_config:
 			raise ValueError('Personal WeChat push configuration not set')
@@ -168,6 +177,9 @@ class NotificationKit:
 		self._post_json('Bark', url, data)
 
 	def push_message(self, title: str, content: str, msg_type: Literal['text', 'html'] = 'text'):
+		# 配置智能机器人后替代个人微信；保留旧 secret 便于回退，不同时发送两次。
+		wechat_name = 'WeCom AI Bot' if self.wecom_aibot_config else 'Personal WeChat'
+		wechat_sender = self.send_wecom_aibot if self.wecom_aibot_config else self.send_personal_weixin
 		notifications = [
 			('Email', lambda: self.send_email(title, content, msg_type)),
 			('PushPlus', lambda: self.send_pushplus(title, content)),
@@ -175,7 +187,7 @@ class NotificationKit:
 			('DingTalk', lambda: self.send_dingtalk(title, content)),
 			('Feishu', lambda: self.send_feishu(title, content)),
 			('WeChat Work', lambda: self.send_wecom(title, content)),
-			('Personal WeChat', lambda: self.send_personal_weixin(title, content)),
+			(wechat_name, lambda: wechat_sender(title, content)),
 			('Gotify', lambda: self.send_gotify(title, content)),
 			('Telegram', lambda: self.send_telegram(title, content)),
 			('Bark', lambda: self.send_bark(title, content)),
